@@ -147,10 +147,6 @@ type Command struct {
 	commands []*Command
 	// parent is a parent command for this command.
 	parent *Command
-	// Max lengths of commands' string lengths for use in padding.
-	commandsMaxUseLen         int
-	commandsMaxCommandPathLen int
-	commandsMaxNameLen        int
 	// commandsAreSorted defines, if command slice are sorted or not.
 	commandsAreSorted bool
 	// commandCalledAs is the name or alias value used to call this command.
@@ -202,6 +198,42 @@ type Command struct {
 	errWriter io.Writer
 }
 
+//getMaxUsageLength gets the longest usage length for the paddins
+func (c *Command) getMaxUsageLength() int {
+	var max int
+	for _, command := range c.commands {
+		usageLen := len(command.Use)
+		if usageLen > max {
+			max = usageLen
+		}
+	}
+	return max
+}
+
+//getMaxUsageLength gets the longest usage length for the paddins
+func (c *Command) getMaxCommandPathLength() int {
+	var max int
+	for _, command := range c.commands {
+		commandPathLen := len(command.CommandPath())
+		if commandPathLen > max {
+			max = commandPathLen
+		}
+	}
+	return max
+}
+
+//getMaxUsageLength gets the longest usage length for the paddins
+func (c *Command) getMaxNameLength() int {
+	var max int
+	for _, command := range c.commands {
+		nameLen := len(command.Name())
+		if nameLen > max {
+			max = nameLen
+		}
+	}
+	return max
+}
+
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
@@ -228,7 +260,7 @@ func (c *Command) SetErr(newErr io.Writer) {
 	c.errWriter = newErr
 }
 
-// SetOut sets the source for input data
+// SetIn sets the source for input data
 // If newIn is nil, os.Stdin is used.
 func (c *Command) SetIn(newIn io.Reader) {
 	c.inReader = newIn
@@ -297,7 +329,7 @@ func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
-// ErrOrStderr returns output to stderr
+// InOrStdin returns output to stderr
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
@@ -330,6 +362,42 @@ func (c *Command) getIn(def io.Reader) io.Reader {
 		return c.parent.getIn(def)
 	}
 	return def
+}
+
+//getMaxUsageLength gets the longest usage length for the paddins
+func (c *Command) getMaxUsageLength() int {
+	var max int
+	for _, command := range c.commands {
+		usageLen := len(command.Use)
+		if usageLen > max {
+			max = usageLen
+		}
+	}
+	return max
+}
+
+//getMaxCommandPathLength gets the longest usage length for the paddins
+func (c *Command) getMaxCommandPathLength() int {
+	var max int
+	for _, command := range c.commands {
+		commandPathLen := len(command.CommandPath())
+		if commandPathLen > max {
+			max = commandPathLen
+		}
+	}
+	return max
+}
+
+//getMaxNameLength gets the longest usage length for the paddins
+func (c *Command) getMaxNameLength() int {
+	var max int
+	for _, command := range c.commands {
+		nameLen := len(command.Name())
+		if nameLen > max {
+			max = nameLen
+		}
+	}
+	return max
 }
 
 // UsageFunc returns either the function set by SetUsageFunc for this command
@@ -423,30 +491,42 @@ var minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
 func (c *Command) UsagePadding() int {
-	if c.parent == nil || minUsagePadding > c.parent.commandsMaxUseLen {
+	if c.parent == nil {
 		return minUsagePadding
 	}
-	return c.parent.commandsMaxUseLen
+	len := c.parent.getMaxUsageLength()
+	if len < minUsagePadding {
+		return minUsagePadding
+	}
+	return len
 }
 
 var minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
 func (c *Command) CommandPathPadding() int {
-	if c.parent == nil || minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
+	if c.parent == nil {
 		return minCommandPathPadding
 	}
-	return c.parent.commandsMaxCommandPathLen
+	len := c.parent.getMaxCommandPathLength()
+	if len < minCommandPathPadding {
+		return minCommandPathPadding
+	}
+	return len
 }
 
 var minNamePadding = 11
 
 // NamePadding returns padding for the name.
 func (c *Command) NamePadding() int {
-	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
+	if c.parent == nil {
 		return minNamePadding
 	}
-	return c.parent.commandsMaxNameLen
+	len := c.parent.getMaxNameLength()
+	if len < minNamePadding {
+		return minNamePadding
+	}
+	return len
 }
 
 // UsageTemplate returns usage template for the command.
@@ -1061,19 +1141,6 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// update max lengths
-		usageLen := len(x.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(x.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(x.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
@@ -1097,24 +1164,6 @@ main:
 		commands = append(commands, command)
 	}
 	c.commands = commands
-	// recompute all lengths
-	c.commandsMaxUseLen = 0
-	c.commandsMaxCommandPathLen = 0
-	c.commandsMaxNameLen = 0
-	for _, command := range c.commands {
-		usageLen := len(command.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(command.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(command.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
-	}
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
