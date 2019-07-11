@@ -198,42 +198,6 @@ type Command struct {
 	errWriter io.Writer
 }
 
-//getMaxUsageLength gets the longest usage length for the paddins
-func (c *Command) getMaxUsageLength() int {
-	var max int
-	for _, command := range c.commands {
-		usageLen := len(command.Use)
-		if usageLen > max {
-			max = usageLen
-		}
-	}
-	return max
-}
-
-//getMaxUsageLength gets the longest usage length for the paddins
-func (c *Command) getMaxCommandPathLength() int {
-	var max int
-	for _, command := range c.commands {
-		commandPathLen := len(command.CommandPath())
-		if commandPathLen > max {
-			max = commandPathLen
-		}
-	}
-	return max
-}
-
-//getMaxUsageLength gets the longest usage length for the paddins
-func (c *Command) getMaxNameLength() int {
-	var max int
-	for _, command := range c.commands {
-		nameLen := len(command.Name())
-		if nameLen > max {
-			max = nameLen
-		}
-	}
-	return max
-}
-
 // SetArgs sets arguments for the command. It is set to os.Args[1:] by default, if desired, can be overridden
 // particularly useful when testing.
 func (c *Command) SetArgs(a []string) {
@@ -244,67 +208,78 @@ func (c *Command) SetArgs(a []string) {
 // If output is nil, os.Stderr is used.
 // Deprecated: Use SetOut and/or SetErr instead
 func (c *Command) SetOutput(output io.Writer) {
-	c.outWriter = output
-	c.errWriter = output
+	c.SetOut(output)
+	c.SetErr(output)
 }
 
 // SetOut sets the destination for usage messages.
 // If newOut is nil, os.Stdout is used.
 func (c *Command) SetOut(newOut io.Writer) {
+	c.validateTree()
 	c.outWriter = newOut
 }
 
 // SetErr sets the destination for error messages.
 // If newErr is nil, os.Stderr is used.
 func (c *Command) SetErr(newErr io.Writer) {
+	c.validateTree()
 	c.errWriter = newErr
 }
 
 // SetIn sets the source for input data
 // If newIn is nil, os.Stdin is used.
 func (c *Command) SetIn(newIn io.Reader) {
+	c.validateTree()
 	c.inReader = newIn
 }
 
 // SetUsageFunc sets usage function. Usage can be defined by application.
 func (c *Command) SetUsageFunc(f func(*Command) error) {
+	c.validateTree()
 	c.usageFunc = f
 }
 
 // SetUsageTemplate sets usage template. Can be defined by Application.
 func (c *Command) SetUsageTemplate(s string) {
+	c.validateTree()
 	c.usageTemplate = s
 }
 
 // SetFlagErrorFunc sets a function to generate an error when flag parsing
 // fails.
 func (c *Command) SetFlagErrorFunc(f func(*Command, error) error) {
+	c.validateTree()
 	c.flagErrorFunc = f
 }
 
 // SetHelpFunc sets help function. Can be defined by Application.
 func (c *Command) SetHelpFunc(f func(*Command, []string)) {
+	c.validateTree()
 	c.helpFunc = f
 }
 
 // SetHelpCommand sets help command.
 func (c *Command) SetHelpCommand(cmd *Command) {
+	c.validateTree()
 	c.helpCommand = cmd
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
 func (c *Command) SetHelpTemplate(s string) {
+	c.validateTree()
 	c.helpTemplate = s
 }
 
 // SetVersionTemplate sets version template to be used. Application can use it to set custom template.
 func (c *Command) SetVersionTemplate(s string) {
+	c.validateTree()
 	c.versionTemplate = s
 }
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
 // The user should not have a cyclic dependency on commands.
 func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string) flag.NormalizedName) {
+	c.validateTree()
 	c.Flags().SetNormalizeFunc(n)
 	c.PersistentFlags().SetNormalizeFunc(n)
 	c.globNormFunc = n
@@ -490,7 +465,7 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 var minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
-func (c *Command) UsagePadding() int {
+func (c *Command) usagePadding() int {
 	if c.parent == nil {
 		return minUsagePadding
 	}
@@ -504,7 +479,7 @@ func (c *Command) UsagePadding() int {
 var minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
-func (c *Command) CommandPathPadding() int {
+func (c *Command) commandPathPadding() int {
 	if c.parent == nil {
 		return minCommandPathPadding
 	}
@@ -518,7 +493,7 @@ func (c *Command) CommandPathPadding() int {
 var minNamePadding = 11
 
 // NamePadding returns padding for the name.
-func (c *Command) NamePadding() int {
+func (c *Command) namePadding() int {
 	if c.parent == nil {
 		return minNamePadding
 	}
@@ -820,6 +795,8 @@ func (c *Command) execute(a []string) (err error) {
 	if c == nil {
 		return fmt.Errorf("Called Execute() on a nil Command")
 	}
+	//make sure all the parents are set
+	c.validateTree()
 
 	if len(c.Deprecated) > 0 {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
@@ -1039,6 +1016,13 @@ func (c *Command) validateRequiredFlags() error {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
+}
+
+func (c *Command) validateTree() {
+	for _, command := range c.commands {
+		command.parent = c
+		command.validateTree()
+	}
 }
 
 // InitDefaultHelpFlag adds default help flag to c.
