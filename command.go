@@ -290,21 +290,25 @@ func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string
 }
 
 // OutOrStdout returns output to stdout.
+// Should only be used inside a command function.
 func (c *Command) OutOrStdout() io.Writer {
 	return c.getOut(os.Stdout)
 }
 
 // OutOrStderr returns output to stderr
+// Should only be used inside a command function.
 func (c *Command) OutOrStderr() io.Writer {
 	return c.getOut(os.Stderr)
 }
 
 // ErrOrStderr returns output to stderr
+// Should only be used inside a command function.
 func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
 // InOrStdin returns output to stderr
+// Should only be used inside a command function.
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
@@ -386,7 +390,7 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
+		err := tmpl(c.OutOrStderr(), c.getUsageTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
@@ -412,7 +416,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 	}
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
+		err := tmpl(c.OutOrStdout(), c.getHelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
@@ -449,13 +453,13 @@ func (c *Command) UsageString() string {
 // FlagErrorFunc returns either the function set by SetFlagErrorFunc for this
 // command or a parent, or it returns a function which returns the original
 // error.
-func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
+func (c *Command) getFlagErrorFunc() (f func(*Command, error) error) {
 	if c.flagErrorFunc != nil {
 		return c.flagErrorFunc
 	}
 
 	if c.HasParent() {
-		return c.parent.FlagErrorFunc()
+		return c.parent.getFlagErrorFunc()
 	}
 	return func(c *Command, err error) error {
 		return err
@@ -465,7 +469,8 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 var minUsagePadding = 25
 
 // UsagePadding return padding for the usage.
-func (c *Command) usagePadding() int {
+// Should only be used inside a command function or template.
+func (c *Command) UsagePadding() int {
 	if c.parent == nil {
 		return minUsagePadding
 	}
@@ -479,7 +484,8 @@ func (c *Command) usagePadding() int {
 var minCommandPathPadding = 11
 
 // CommandPathPadding return padding for the command path.
-func (c *Command) commandPathPadding() int {
+// Should only be used inside a command function or template.
+func (c *Command) CommandPathPadding() int {
 	if c.parent == nil {
 		return minCommandPathPadding
 	}
@@ -493,7 +499,8 @@ func (c *Command) commandPathPadding() int {
 var minNamePadding = 11
 
 // NamePadding returns padding for the name.
-func (c *Command) namePadding() int {
+// Should only be used inside a command function or template.
+func (c *Command) NamePadding() int {
 	if c.parent == nil {
 		return minNamePadding
 	}
@@ -505,13 +512,13 @@ func (c *Command) namePadding() int {
 }
 
 // UsageTemplate returns usage template for the command.
-func (c *Command) UsageTemplate() string {
+func (c *Command) getUsageTemplate() string {
 	if c.usageTemplate != "" {
 		return c.usageTemplate
 	}
 
 	if c.HasParent() {
-		return c.parent.UsageTemplate()
+		return c.parent.getUsageTemplate()
 	}
 	return `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
@@ -540,13 +547,13 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 }
 
 // HelpTemplate return help template for the command.
-func (c *Command) HelpTemplate() string {
+func (c *Command) getHelpTemplate() string {
 	if c.helpTemplate != "" {
 		return c.helpTemplate
 	}
 
 	if c.HasParent() {
-		return c.parent.HelpTemplate()
+		return c.parent.getHelpTemplate()
 	}
 	return `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
 
@@ -554,13 +561,13 @@ func (c *Command) HelpTemplate() string {
 }
 
 // VersionTemplate return version template for the command.
-func (c *Command) VersionTemplate() string {
+func (c *Command) getVersionTemplate() string {
 	if c.versionTemplate != "" {
 		return c.versionTemplate
 	}
 
 	if c.HasParent() {
-		return c.parent.VersionTemplate()
+		return c.parent.getVersionTemplate()
 	}
 	return `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
@@ -809,7 +816,7 @@ func (c *Command) execute(a []string) (err error) {
 
 	err = c.ParseFlags(a)
 	if err != nil {
-		return c.FlagErrorFunc()(c, err)
+		return c.getFlagErrorFunc()(c, err)
 	}
 
 	// If help is called, regardless of other flags, return we want help.
@@ -834,7 +841,7 @@ func (c *Command) execute(a []string) (err error) {
 			return err
 		}
 		if versionVal {
-			err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
+			err := tmpl(c.OutOrStdout(), c.getVersionTemplate(), c)
 			if err != nil {
 				c.Println(err)
 			}
@@ -1151,36 +1158,43 @@ main:
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) Print(i ...interface{}) {
 	fmt.Fprint(c.OutOrStderr(), i...)
 }
 
 // Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) Println(i ...interface{}) {
 	c.Print(fmt.Sprintln(i...))
 }
 
 // Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) Printf(format string, i ...interface{}) {
 	c.Print(fmt.Sprintf(format, i...))
 }
 
 // PrintErr is a convenience method to Print to the defined Err output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) PrintErr(i ...interface{}) {
 	fmt.Fprint(c.ErrOrStderr(), i...)
 }
 
 // PrintErrln is a convenience method to Println to the defined Err output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) PrintErrln(i ...interface{}) {
 	c.Print(fmt.Sprintln(i...))
 }
 
 // PrintErrf is a convenience method to Printf to the defined Err output, fallback to Stderr if not set.
+// Should only be used inside a command function.
 func (c *Command) PrintErrf(format string, i ...interface{}) {
 	c.Print(fmt.Sprintf(format, i...))
 }
 
 // CommandPath returns the full path to this command.
+// Should only be used inside a command function or template.
 func (c *Command) CommandPath() string {
 	if c.HasParent() {
 		return c.Parent().CommandPath() + " " + c.Name()
@@ -1189,6 +1203,7 @@ func (c *Command) CommandPath() string {
 }
 
 // UseLine puts out the full usage for a given command (including parents).
+// Should only be used inside a command function or template.
 func (c *Command) UseLine() string {
 	var useline string
 	if c.HasParent() {
