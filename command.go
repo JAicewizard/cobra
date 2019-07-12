@@ -390,7 +390,7 @@ func (c *Command) safeUsageFunc() (f func(*Command) error) {
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.getUsageTemplate(), newTemplateData(c))
+		err := tmpl(c.OutOrStderr(), c.getUsageTemplate(), newDocumentationData(c))
 		if err != nil {
 			c.Println(err)
 		}
@@ -416,7 +416,7 @@ func (c *Command) safeHelpFunc() func(*Command, []string) {
 	}
 	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStdout(), c.getHelpTemplate(), newTemplateData(c))
+		err := tmpl(c.OutOrStdout(), c.getHelpTemplate(), newDocumentationData(c))
 		if err != nil {
 			c.Println(err)
 		}
@@ -790,7 +790,7 @@ func (c *Command) execute(a []string) (err error) {
 			return err
 		}
 		if versionVal {
-			err := tmpl(c.OutOrStdout(), c.getVersionTemplate(), newTemplateData(c))
+			err := tmpl(c.OutOrStdout(), c.getVersionTemplate(), newDocumentationData(c))
 			if err != nil {
 				c.Println(err)
 			}
@@ -1591,7 +1591,7 @@ func (c *Command) updateParentsPflags() {
 	})
 }
 
-//TemplateData gets all the data needed for templating and documentation
-func (c *Command) TemplateData() *TemplateData {
-	return newTemplateData(c)
+//DocumentationData gets all the data needed for templating and documentation
+func (c *Command) DocumentationData() *DocumentationData {
+	return newDocumentationData(c)
 }

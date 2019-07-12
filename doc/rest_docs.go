@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptionsReST(buf *bytes.Buffer, cmd *cobra.TemplateData, name string) error {
+func printOptionsReST(buf *bytes.Buffer, cmd *cobra.DocumentationData, name string) error {
 	flags := cmd.NonInheritedFlags
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -53,15 +53,15 @@ func defaultLinkHandler(name, ref string) string {
 }
 
 // GenReST creates reStructured Text output.
-func GenReST(cmd *cobra.TemplateData, w io.Writer) error {
+func GenReST(cmd *cobra.DocumentationData, w io.Writer) error {
 	return GenReSTCustom(cmd, w, defaultLinkHandler)
 }
 
 // GenReSTCustom creates custom reStructured Text output.
-func GenReSTCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string, string) string) error {
+func GenReSTCustom(cmd *cobra.DocumentationData, w io.Writer, linkHandler func(string, string) string) error {
 	cmd.Command().InitDefaultHelpCmd()
 	cmd.Command().InitDefaultHelpFlag()
-	cmd = cmd.Command().TemplateData()
+	cmd = cmd.Command().DocumentationData()
 
 	buf := new(bytes.Buffer)
 	name := cmd.CommandPath
@@ -136,19 +136,19 @@ func GenReSTCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string
 // If you have `cmd` with two subcmds, `sub` and `sub-third`,
 // and `sub` has a subcommand called `third`, it is undefined which
 // help output will be in the file `cmd-sub-third.1`.
-func GenReSTTree(cmd *cobra.TemplateData, dir string) error {
+func GenReSTTree(cmd *cobra.DocumentationData, dir string) error {
 	emptyStr := func(s string) string { return "" }
 	return GenReSTTreeCustom(cmd, dir, emptyStr, defaultLinkHandler)
 }
 
 // GenReSTTreeCustom is the the same as GenReSTTree, but
 // with custom filePrepender and linkHandler.
-func GenReSTTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
+func GenReSTTreeCustom(cmd *cobra.DocumentationData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
 	return genReSTTreeCustom(cmd, dir, filePrepender, linkHandler)
 
 }
 
-func genReSTTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
+func genReSTTreeCustom(cmd *cobra.DocumentationData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue

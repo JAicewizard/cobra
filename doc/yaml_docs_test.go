@@ -13,7 +13,7 @@ import (
 func TestGenYamlDoc(t *testing.T) {
 	// We generate on s subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenYaml(echoCmd.TemplateData(), buf); err != nil {
+	if err := GenYaml(echoCmd.DocumentationData(), buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -31,7 +31,7 @@ func TestGenYamlNoTag(t *testing.T) {
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenYaml(rootCmd.TemplateData(), buf); err != nil {
+	if err := GenYaml(rootCmd.DocumentationData(), buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -48,7 +48,7 @@ func TestGenYamlTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenYamlTree(c.TemplateData(), tmpdir); err != nil {
+	if err := GenYamlTree(c.DocumentationData(), tmpdir); err != nil {
 		t.Fatalf("GenYamlTree failed: %s", err.Error())
 	}
 
@@ -67,7 +67,7 @@ func BenchmarkGenYamlToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenYaml(rootCmd.TemplateData(), file); err != nil {
+		if err := GenYaml(rootCmd.DocumentationData(), file); err != nil {
 			b.Fatal(err)
 		}
 	}

@@ -34,7 +34,7 @@ import (
 // correctly if your command names have `-` in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
-func GenManTree(cmd *cobra.TemplateData, header *GenManHeader, dir string) error {
+func GenManTree(cmd *cobra.DocumentationData, header *GenManHeader, dir string) error {
 	return GenManTreeFromOpts(cmd, GenManTreeOptions{
 		Header:           header,
 		Path:             dir,
@@ -44,7 +44,7 @@ func GenManTree(cmd *cobra.TemplateData, header *GenManHeader, dir string) error
 
 // GenManTreeFromOpts generates a man page for the command and all descendants.
 // The pages are written to the opts.Path directory.
-func GenManTreeFromOpts(cmd *cobra.TemplateData, opts GenManTreeOptions) error {
+func GenManTreeFromOpts(cmd *cobra.DocumentationData, opts GenManTreeOptions) error {
 	header := opts.Header
 	if header == nil {
 		header = &GenManHeader{}
@@ -101,7 +101,7 @@ type GenManHeader struct {
 
 // GenMan will generate a man page for the given command and write it to
 // w. The header argument may be nil, however obviously w may not.
-func GenMan(cmd *cobra.TemplateData, header *GenManHeader, w io.Writer) error {
+func GenMan(cmd *cobra.DocumentationData, header *GenManHeader, w io.Writer) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
@@ -112,14 +112,14 @@ func GenMan(cmd *cobra.TemplateData, header *GenManHeader, w io.Writer) error {
 	cmd.Command().InitDefaultHelpCmd()
 	cmd.Command().InitDefaultHelpFlag()
 	//update the templateDate
-	cmd = cmd.Command().TemplateData()
+	cmd = cmd.Command().DocumentationData()
 
 	b := genMan(cmd, header)
 	_, err := w.Write(md2man.Render(b))
 	return err
 }
 
-func genMan(cmd *cobra.TemplateData, header *GenManHeader) []byte {
+func genMan(cmd *cobra.DocumentationData, header *GenManHeader) []byte {
 	// something like `rootcmd-subcmd1-subcmd2`
 	dashCommandName := strings.Replace(cmd.CommandPath, " ", "-", -1)
 
@@ -187,7 +187,7 @@ func fillHeader(header *GenManHeader, name string) error {
 	return nil
 }
 
-func manPreamble(buf *bytes.Buffer, header *GenManHeader, cmd *cobra.TemplateData, dashedName string) {
+func manPreamble(buf *bytes.Buffer, header *GenManHeader, cmd *cobra.DocumentationData, dashedName string) {
 	description := cmd.Long
 	if len(description) == 0 {
 		description = cmd.Short
@@ -233,7 +233,7 @@ func manPrintFlags(buf *bytes.Buffer, flags *pflag.FlagSet) {
 	})
 }
 
-func manPrintOptions(buf *bytes.Buffer, cmd *cobra.TemplateData) {
+func manPrintOptions(buf *bytes.Buffer, cmd *cobra.DocumentationData) {
 	flags := cmd.NonInheritedFlags
 	if flags.HasAvailableFlags() {
 		buf.WriteString("# OPTIONS\n")

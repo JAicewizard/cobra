@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptions(buf *bytes.Buffer, cmd *cobra.TemplateData, name string) error {
+func printOptions(buf *bytes.Buffer, cmd *cobra.DocumentationData, name string) error {
 	flags := cmd.NonInheritedFlags
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -46,15 +46,15 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.TemplateData, name string) error
 }
 
 // GenMarkdown creates markdown output.
-func GenMarkdown(cmd *cobra.TemplateData, w io.Writer) error {
+func GenMarkdown(cmd *cobra.DocumentationData, w io.Writer) error {
 	return GenMarkdownCustom(cmd, w, func(s string) string { return s })
 }
 
 // GenMarkdownCustom creates custom markdown output.
-func GenMarkdownCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string) string) error {
+func GenMarkdownCustom(cmd *cobra.DocumentationData, w io.Writer, linkHandler func(string) string) error {
 	cmd.Command().InitDefaultHelpCmd()
 	cmd.Command().InitDefaultHelpFlag()
-	cmd = cmd.Command().TemplateData()
+	cmd = cmd.Command().DocumentationData()
 
 	buf := new(bytes.Buffer)
 	name := cmd.CommandPath
@@ -125,7 +125,7 @@ func GenMarkdownCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(st
 // If you have `cmd` with two subcmds, `sub` and `sub-third`,
 // and `sub` has a subcommand called `third`, it is undefined which
 // help output will be in the file `cmd-sub-third.1`.
-func GenMarkdownTree(cmd *cobra.TemplateData, dir string) error {
+func GenMarkdownTree(cmd *cobra.DocumentationData, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
 	return GenMarkdownTreeCustom(cmd, dir, emptyStr, identity)
@@ -133,7 +133,7 @@ func GenMarkdownTree(cmd *cobra.TemplateData, dir string) error {
 
 // GenMarkdownTreeCustom is the the same as GenMarkdownTree, but
 // with custom filePrepender and linkHandler.
-func GenMarkdownTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
+func GenMarkdownTreeCustom(cmd *cobra.DocumentationData, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue

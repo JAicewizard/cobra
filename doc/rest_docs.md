@@ -74,13 +74,13 @@ This will write the ReST doc for ONLY "cmd" into the out, buffer.
 Both `GenReST` and `GenReSTTree` have alternate versions with callbacks to get some control of the output:
 
 ```go
-func GenReSTTreeCustom(cmd *TemplateData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
+func GenReSTTreeCustom(cmd *DocumentationData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
 	//...
 }
 ```
 
 ```go
-func GenReSTCustom(cmd *TemplateData, out *bytes.Buffer, linkHandler func(string, string) string) error {
+func GenReSTCustom(cmd *DocumentationData, out *bytes.Buffer, linkHandler func(string, string) string) error {
 	//...
 }
 ```

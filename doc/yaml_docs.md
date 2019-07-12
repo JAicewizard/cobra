@@ -71,13 +71,13 @@ This will write the yaml doc for ONLY "cmd" into the out, buffer.
 Both `GenYaml` and `GenYamlTree` have alternate versions with callbacks to get some control of the output:
 
 ```go
-func GenYamlTreeCustom(cmd *TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
+func GenYamlTreeCustom(cmd *DocumentationData, dir string, filePrepender, linkHandler func(string) string) error {
 	//...
 }
 ```
 
 ```go
-func GenYamlCustom(cmd *TemplateData, out *bytes.Buffer, linkHandler func(string) string) error {
+func GenYamlCustom(cmd *DocumentationData, out *bytes.Buffer, linkHandler func(string) string) error {
 	//...
 }
 ```
