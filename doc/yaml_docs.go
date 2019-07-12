@@ -48,23 +48,19 @@ type cmdDoc struct {
 // correctly if your command names have `-` in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
-func GenYamlTree(cmd *cobra.Command, dir string) error {
+func GenYamlTree(cmd *cobra.TemplateData, dir string) error {
 	identity := func(s string) string { return s }
 	emptyStr := func(s string) string { return "" }
 	return GenYamlTreeCustom(cmd, dir, emptyStr, identity)
 }
 
 // GenYamlTreeCustom creates yaml structured ref files.
-func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
-	return genYamlTreeCustom(cmd.TemplateData(), dir, filePrepender, linkHandler)
-}
-
-func genYamlTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
+func GenYamlTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue
 		}
-		if err := genYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := GenYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
 			return err
 		}
 	}
@@ -80,27 +76,23 @@ func genYamlTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkH
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenYamlCustom(cmd.Command(), f, linkHandler); err != nil {
+	if err := GenYamlCustom(cmd, f, linkHandler); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GenYaml creates yaml output.
-func GenYaml(cmd *cobra.Command, w io.Writer) error {
+func GenYaml(cmd *cobra.TemplateData, w io.Writer) error {
 	return GenYamlCustom(cmd, w, func(s string) string { return s })
 }
 
 // GenYamlCustom creates custom yaml output.
-func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) string) error {
-	cmd.InitDefaultHelpCmd()
-	cmd.InitDefaultHelpFlag()
+func GenYamlCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string) string) error {
+	cmd.Command().InitDefaultHelpCmd()
+	cmd.Command().InitDefaultHelpFlag()
+	cmd = cmd.Command().TemplateData()
 
-	return genYamlCustom(cmd.TemplateData(), w, linkHandler)
-}
-
-// GenYamlCustom creates custom yaml output.
-func genYamlCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string) string) error {
 	yamlDoc := cmdDoc{}
 	yamlDoc.Name = cmd.CommandPath
 

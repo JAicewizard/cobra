@@ -75,8 +75,7 @@ func GenManTreeFromOpts(cmd *cobra.TemplateData, opts GenManTreeOptions) error {
 	defer f.Close()
 
 	headerCopy := *header
-	return GenMan(cmd.Command(), &headerCopy, f)
-
+	return GenMan(cmd, &headerCopy, f)
 }
 
 // GenManTreeOptions is the options for generating the man pages.
@@ -102,17 +101,20 @@ type GenManHeader struct {
 
 // GenMan will generate a man page for the given command and write it to
 // w. The header argument may be nil, however obviously w may not.
-func GenMan(cmd *cobra.Command, header *GenManHeader, w io.Writer) error {
+func GenMan(cmd *cobra.TemplateData, header *GenManHeader, w io.Writer) error {
 	if header == nil {
 		header = &GenManHeader{}
 	}
-	if err := fillHeader(header, cmd.CommandPath()); err != nil {
+	if err := fillHeader(header, cmd.CommandPath); err != nil {
 		return err
 	}
-	cmd.InitDefaultHelpCmd()
-	cmd.InitDefaultHelpFlag()
 
-	b := genMan(cmd.TemplateData(), header)
+	cmd.Command().InitDefaultHelpCmd()
+	cmd.Command().InitDefaultHelpFlag()
+	//update the templateDate
+	cmd = cmd.Command().TemplateData()
+
+	b := genMan(cmd, header)
 	_, err := w.Write(md2man.Render(b))
 	return err
 }

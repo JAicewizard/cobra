@@ -25,7 +25,7 @@ func TestGenManDoc(t *testing.T) {
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := GenMan(echoCmd.TemplateData(), header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -60,7 +60,7 @@ func TestGenManNoHiddenParents(t *testing.T) {
 		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := GenMan(echoCmd.TemplateData(), header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -94,7 +94,7 @@ func TestGenManNoGenTag(t *testing.T) {
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := GenMan(echoCmd.TemplateData(), header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -112,7 +112,7 @@ func TestGenManSeeAlso(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	header := &GenManHeader{}
-	if err := GenMan(rootCmd, header, buf); err != nil {
+	if err := GenMan(rootCmd.TemplateData(), header, buf); err != nil {
 		t.Fatal(err)
 	}
 	scanner := bufio.NewScanner(buf)
@@ -152,7 +152,7 @@ func TestGenManTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenManTree(c, header, tmpdir); err != nil {
+	if err := GenManTree(c.TemplateData(), header, tmpdir); err != nil {
 		t.Fatalf("GenManTree failed: %s", err.Error())
 	}
 
@@ -206,7 +206,7 @@ func BenchmarkGenManToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenMan(rootCmd, nil, file); err != nil {
+		if err := GenMan(rootCmd.TemplateData(), nil, file); err != nil {
 			b.Fatal(err)
 		}
 	}

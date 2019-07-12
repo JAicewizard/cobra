@@ -13,7 +13,7 @@ import (
 func TestGenMdDoc(t *testing.T) {
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
-	if err := GenMarkdown(echoCmd, buf); err != nil {
+	if err := GenMarkdown(echoCmd.TemplateData(), buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -36,7 +36,7 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
-	if err := GenMarkdown(echoCmd, buf); err != nil {
+	if err := GenMarkdown(echoCmd.TemplateData(), buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -56,7 +56,7 @@ func TestGenMdNoTag(t *testing.T) {
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenMarkdown(rootCmd, buf); err != nil {
+	if err := GenMarkdown(rootCmd.TemplateData(), buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -72,7 +72,7 @@ func TestGenMdTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenMarkdownTree(c, tmpdir); err != nil {
+	if err := GenMarkdownTree(c.TemplateData(), tmpdir); err != nil {
 		t.Fatalf("GenMarkdownTree failed: %v", err)
 	}
 
@@ -91,7 +91,7 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenMarkdown(rootCmd, file); err != nil {
+		if err := GenMarkdown(rootCmd.TemplateData(), file); err != nil {
 			b.Fatal(err)
 		}
 	}

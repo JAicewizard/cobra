@@ -17,7 +17,7 @@ func ExampleGenManTree() {
 		Title:   "MINE",
 		Section: "3",
 	}
-	doc.GenManTree(cmd, header, "/tmp")
+	doc.GenManTree(cmd.TemplateData(), header, "/tmp")
 }
 
 func ExampleGenMan() {
@@ -30,6 +30,6 @@ func ExampleGenMan() {
 		Section: "3",
 	}
 	out := new(bytes.Buffer)
-	doc.GenMan(cmd, header, out)
+	doc.GenMan(cmd.TemplateData(), header, out)
 	fmt.Print(out.String())
 }
