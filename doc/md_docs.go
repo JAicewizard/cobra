@@ -26,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
-	flags := cmd.NonInheritedFlags()
+func printOptions(buf *bytes.Buffer, cmd *cobra.TemplateData, name string) error {
+	flags := cmd.NonInheritedFlags
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
 		buf.WriteString("### Options\n\n```\n")
@@ -35,7 +35,7 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
 		buf.WriteString("```\n\n")
 	}
 
-	parentFlags := cmd.InheritedFlags()
+	parentFlags := cmd.InheritedFlags
 	parentFlags.SetOutput(buf)
 	if parentFlags.HasAvailableFlags() {
 		buf.WriteString("### Options inherited from parent commands\n\n```\n")
@@ -55,8 +55,12 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
+	return genMarkdownCustom(cmd.TemplateData(), w, linkHandler)
+}
+
+func genMarkdownCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string) string) error {
 	buf := new(bytes.Buffer)
-	name := cmd.CommandPath()
+	name := cmd.CommandPath
 
 	short := cmd.Short
 	long := cmd.Long
@@ -69,8 +73,8 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	buf.WriteString("### Synopsis\n\n")
 	buf.WriteString(long + "\n\n")
 
-	if cmd.Runnable() {
-		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.UseLine()))
+	if cmd.Runnable {
+		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.UseLine))
 	}
 
 	if len(cmd.Example) > 0 {
@@ -85,7 +89,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		buf.WriteString("### SEE ALSO\n\n")
 		if cmd.HasParent() {
 			parent := cmd.Parent()
-			pname := parent.CommandPath()
+			pname := parent.CommandPath
 			link := pname + ".md"
 			link = strings.Replace(link, " ", "_", -1)
 			buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short))
@@ -100,10 +104,10 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 		sort.Sort(byName(children))
 
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
+			if !child.IsAvailableCommand || child.IsAdditionalHelpTopicCommand {
 				continue
 			}
-			cname := name + " " + child.Name()
+			cname := name + " " + child.Name
 			link := cname + ".md"
 			link = strings.Replace(link, " ", "_", -1)
 			buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", cname, linkHandler(link), child.Short))
@@ -115,6 +119,7 @@ func GenMarkdownCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string)
 	}
 	_, err := buf.WriteTo(w)
 	return err
+
 }
 
 // GenMarkdownTree will generate a markdown page for this command and all
@@ -132,16 +137,20 @@ func GenMarkdownTree(cmd *cobra.Command, dir string) error {
 // GenMarkdownTreeCustom is the the same as GenMarkdownTree, but
 // with custom filePrepender and linkHandler.
 func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
+	return genMarkdownTreeCustom(cmd.TemplateData(), dir, filePrepender, linkHandler)
+}
+
+func genMarkdownTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue
 		}
-		if err := GenMarkdownTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := genMarkdownTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
 			return err
 		}
 	}
 
-	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".md"
+	basename := strings.Replace(cmd.CommandPath, " ", "_", -1) + ".md"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -152,8 +161,9 @@ func GenMarkdownTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHa
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenMarkdownCustom(cmd, f, linkHandler); err != nil {
+	if err := GenMarkdownCustom(cmd.Command(), f, linkHandler); err != nil {
 		return err
 	}
 	return nil
+
 }

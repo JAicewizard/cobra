@@ -116,7 +116,7 @@ func (c *Command) GenZshCompletion(w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("error creating zsh completion template: %v", err)
 	}
-	return tmpl.Execute(w, c.Root())
+	return tmpl.Execute(w, c.root())
 }
 
 // MarkZshCompPositionalArgumentFile marks the specified argument (first
@@ -244,7 +244,7 @@ func (c *Command) zshCompSetArgsAnnotations(annotation zshCompArgsAnnotation) er
 }
 
 func zshCompGenFuncName(c *Command) string {
-	if c.HasParent() {
+	if c.hasParent() {
 		return zshCompGenFuncName(c.Parent()) + "_" + c.Name()
 	}
 	return "_" + c.Name()

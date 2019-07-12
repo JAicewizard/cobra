@@ -26,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printOptionsReST(buf *bytes.Buffer, cmd *cobra.Command, name string) error {
-	flags := cmd.NonInheritedFlags()
+func printOptionsReST(buf *bytes.Buffer, cmd *cobra.TemplateData, name string) error {
+	flags := cmd.NonInheritedFlags
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
 		buf.WriteString("Options\n")
@@ -36,7 +36,7 @@ func printOptionsReST(buf *bytes.Buffer, cmd *cobra.Command, name string) error 
 		buf.WriteString("\n")
 	}
 
-	parentFlags := cmd.InheritedFlags()
+	parentFlags := cmd.InheritedFlags
 	parentFlags.SetOutput(buf)
 	if parentFlags.HasAvailableFlags() {
 		buf.WriteString("Options inherited from parent commands\n")
@@ -62,8 +62,12 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
+	return genReSTCustom(cmd.TemplateData(), w, linkHandler)
+}
+
+func genReSTCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string, string) string) error {
 	buf := new(bytes.Buffer)
-	name := cmd.CommandPath()
+	name := cmd.CommandPath
 
 	short := cmd.Short
 	long := cmd.Long
@@ -80,8 +84,8 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 	buf.WriteString("~~~~~~~~\n\n")
 	buf.WriteString("\n" + long + "\n\n")
 
-	if cmd.Runnable() {
-		buf.WriteString(fmt.Sprintf("::\n\n  %s\n\n", cmd.UseLine()))
+	if cmd.Runnable {
+		buf.WriteString(fmt.Sprintf("::\n\n  %s\n\n", cmd.UseLine))
 	}
 
 	if len(cmd.Example) > 0 {
@@ -98,7 +102,7 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 		buf.WriteString("~~~~~~~~\n\n")
 		if cmd.HasParent() {
 			parent := cmd.Parent()
-			pname := parent.CommandPath()
+			pname := parent.CommandPath
 			ref = strings.Replace(pname, " ", "_", -1)
 			buf.WriteString(fmt.Sprintf("* %s \t - %s\n", linkHandler(pname, ref), parent.Short))
 			cmd.VisitParents(func(c *cobra.Command) {
@@ -112,10 +116,10 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 		sort.Sort(byName(children))
 
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
+			if !child.IsAvailableCommand || child.IsAdditionalHelpTopicCommand {
 				continue
 			}
-			cname := name + " " + child.Name()
+			cname := name + " " + child.Name
 			ref = strings.Replace(cname, " ", "_", -1)
 			buf.WriteString(fmt.Sprintf("* %s \t - %s\n", linkHandler(cname, ref), child.Short))
 		}
@@ -126,6 +130,7 @@ func GenReSTCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string, str
 	}
 	_, err := buf.WriteTo(w)
 	return err
+
 }
 
 // GenReSTTree will generate a ReST page for this command and all
@@ -142,16 +147,21 @@ func GenReSTTree(cmd *cobra.Command, dir string) error {
 // GenReSTTreeCustom is the the same as GenReSTTree, but
 // with custom filePrepender and linkHandler.
 func GenReSTTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
+	return genReSTTreeCustom(cmd.TemplateData(), dir, filePrepender, linkHandler)
+
+}
+
+func genReSTTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender func(string) string, linkHandler func(string, string) string) error {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue
 		}
-		if err := GenReSTTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := genReSTTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
 			return err
 		}
 	}
 
-	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".rst"
+	basename := strings.Replace(cmd.CommandPath, " ", "_", -1) + ".rst"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -162,10 +172,11 @@ func GenReSTTreeCustom(cmd *cobra.Command, dir string, filePrepender func(string
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenReSTCustom(cmd, f, linkHandler); err != nil {
+	if err := GenReSTCustom(cmd.Command(), f, linkHandler); err != nil {
 		return err
 	}
 	return nil
+
 }
 
 // adapted from: https://github.com/kr/text/blob/main/indent.go

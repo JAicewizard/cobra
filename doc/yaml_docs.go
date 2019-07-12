@@ -56,16 +56,20 @@ func GenYamlTree(cmd *cobra.Command, dir string) error {
 
 // GenYamlTreeCustom creates yaml structured ref files.
 func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandler func(string) string) error {
+	return genYamlTreeCustom(cmd.TemplateData(), dir, filePrepender, linkHandler)
+}
+
+func genYamlTreeCustom(cmd *cobra.TemplateData, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+		if !c.IsAvailableCommand || c.IsAdditionalHelpTopicCommand {
 			continue
 		}
-		if err := GenYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := genYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
 			return err
 		}
 	}
 
-	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".yaml"
+	basename := strings.Replace(cmd.CommandPath, " ", "_", -1) + ".yaml"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -76,7 +80,7 @@ func GenYamlTreeCustom(cmd *cobra.Command, dir string, filePrepender, linkHandle
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenYamlCustom(cmd, f, linkHandler); err != nil {
+	if err := GenYamlCustom(cmd.Command(), f, linkHandler); err != nil {
 		return err
 	}
 	return nil
@@ -92,8 +96,13 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 
+	return genYamlCustom(cmd.TemplateData(), w, linkHandler)
+}
+
+// GenYamlCustom creates custom yaml output.
+func genYamlCustom(cmd *cobra.TemplateData, w io.Writer, linkHandler func(string) string) error {
 	yamlDoc := cmdDoc{}
-	yamlDoc.Name = cmd.CommandPath()
+	yamlDoc.Name = cmd.CommandPath
 
 	yamlDoc.Synopsis = forceMultiLine(cmd.Short)
 	yamlDoc.Description = forceMultiLine(cmd.Long)
@@ -102,11 +111,11 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		yamlDoc.Example = cmd.Example
 	}
 
-	flags := cmd.NonInheritedFlags()
+	flags := cmd.NonInheritedFlags
 	if flags.HasFlags() {
 		yamlDoc.Options = genFlagResult(flags)
 	}
-	flags = cmd.InheritedFlags()
+	flags = cmd.InheritedFlags
 	if flags.HasFlags() {
 		yamlDoc.InheritedOptions = genFlagResult(flags)
 	}
@@ -115,15 +124,15 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		result := []string{}
 		if cmd.HasParent() {
 			parent := cmd.Parent()
-			result = append(result, parent.CommandPath()+" - "+parent.Short)
+			result = append(result, parent.CommandPath+" - "+parent.Short)
 		}
 		children := cmd.Commands()
 		sort.Sort(byName(children))
 		for _, child := range children {
-			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
+			if !child.IsAvailableCommand || child.IsAdditionalHelpTopicCommand {
 				continue
 			}
-			result = append(result, child.Name()+" - "+child.Short)
+			result = append(result, child.Name+" - "+child.Short)
 		}
 		yamlDoc.SeeAlso = result
 	}
@@ -138,6 +147,7 @@ func GenYamlCustom(cmd *cobra.Command, w io.Writer, linkHandler func(string) str
 		return err
 	}
 	return nil
+
 }
 
 func genFlagResult(flags *pflag.FlagSet) []cmdOption {

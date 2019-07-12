@@ -317,7 +317,7 @@ fi
 func writeCommands(buf *bytes.Buffer, cmd *Command) {
 	buf.WriteString("    commands=()\n")
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c == cmd.helpCommand {
+		if !c.isAvailableCommand() || c == cmd.helpCommand {
 			continue
 		}
 		buf.WriteString(fmt.Sprintf("    commands+=(%q)\n", c.Name()))
@@ -334,7 +334,7 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 
 			var ext string
 			if len(value) > 0 {
-				ext = fmt.Sprintf("__%s_handle_filename_extension_flag ", cmd.Root().Name()) + strings.Join(value, "|")
+				ext = fmt.Sprintf("__%s_handle_filename_extension_flag ", cmd.root().Name()) + strings.Join(value, "|")
 			} else {
 				ext = "_filedir"
 			}
@@ -352,7 +352,7 @@ func writeFlagHandler(buf *bytes.Buffer, name string, annotations map[string][]s
 
 			var ext string
 			if len(value) == 1 {
-				ext = fmt.Sprintf("__%s_handle_subdirs_in_dir_flag ", cmd.Root().Name()) + value[0]
+				ext = fmt.Sprintf("__%s_handle_subdirs_in_dir_flag ", cmd.root().Name()) + value[0]
 			} else {
 				ext = "_filedir -d"
 			}
@@ -489,7 +489,7 @@ func writeArgAliases(buf *bytes.Buffer, cmd *Command) {
 
 func gen(buf *bytes.Buffer, cmd *Command) {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c == cmd.helpCommand {
+		if !c.isAvailableCommand() || c == cmd.helpCommand {
 			continue
 		}
 		gen(buf, c)
@@ -498,7 +498,7 @@ func gen(buf *bytes.Buffer, cmd *Command) {
 	commandName = strings.Replace(commandName, " ", "_", -1)
 	commandName = strings.Replace(commandName, ":", "__", -1)
 
-	if cmd.Root() == cmd {
+	if cmd.root() == cmd {
 		buf.WriteString(fmt.Sprintf("_%s_root_command()\n{\n", commandName))
 	} else {
 		buf.WriteString(fmt.Sprintf("_%s()\n{\n", commandName))

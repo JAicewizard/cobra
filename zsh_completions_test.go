@@ -236,7 +236,7 @@ func TestGenZshCompletion(t *testing.T) {
 			if tc.skip != "" {
 				t.Skip(tc.skip)
 			}
-			tc.root.Root().SetArgs(tc.invocationArgs)
+			tc.root.root().SetArgs(tc.invocationArgs)
 			tc.root.Execute()
 			buf := new(bytes.Buffer)
 			if err := tc.root.GenZshCompletion(buf); err != nil {

@@ -325,8 +325,8 @@ func TestFlagLong(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	if c.ArgsLenAtDash() != 1 {
-		t.Errorf("Expected ArgsLenAtDash: %v but got %v", 1, c.ArgsLenAtDash())
+	if c.argsLenAtDash() != 1 {
+		t.Errorf("Expected ArgsLenAtDash: %v but got %v", 1, c.argsLenAtDash())
 	}
 	if intFlagValue != 7 {
 		t.Errorf("Expected intFlagValue: %v, got %v", 7, intFlagValue)
@@ -922,19 +922,19 @@ func TestVisitParents(t *testing.T) {
 	add := func(x *Command) {
 		total++
 	}
-	sub.VisitParents(add)
+	sub.visitParents(add)
 	if total != 1 {
 		t.Errorf("Should have visited 1 parent but visited %d", total)
 	}
 
 	total = 0
-	dsub.VisitParents(add)
+	dsub.visitParents(add)
 	if total != 2 {
 		t.Errorf("Should have visited 2 parents but visited %d", total)
 	}
 
 	total = 0
-	c.VisitParents(add)
+	c.visitParents(add)
 	if total != 0 {
 		t.Errorf("Should have visited no parents but visited %d", total)
 	}
@@ -1216,11 +1216,11 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
-	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer() {
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(rootCmd.globalNormalizationFunc()).Pointer() {
 		t.Error("rootCmd seems to have a wrong normalization function")
 	}
 
-	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(childCmd.GlobalNormalizationFunc()).Pointer() {
+	if reflect.ValueOf(normFunc).Pointer() != reflect.ValueOf(childCmd.globalNormalizationFunc()).Pointer() {
 		t.Error("childCmd should have had the normalization function of rootCmd")
 	}
 }
@@ -1325,7 +1325,7 @@ func TestHiddenCommandExecutes(t *testing.T) {
 // test to ensure hidden commands do not show up in usage/help text
 func TestHiddenCommandIsHidden(t *testing.T) {
 	c := &Command{Use: "c", Hidden: true, Run: emptyRun}
-	if c.IsAvailableCommand() {
+	if c.isAvailableCommand() {
 		t.Errorf("Hidden command should be unavailable")
 	}
 }
@@ -1416,7 +1416,7 @@ func TestUsageStringRedirected(t *testing.T) {
 	}
 
 	expected := "[stdout1][stderr2][stdout3]"
-	if got := c.UsageString(); got != expected {
+	if got := c.usageString(); got != expected {
 		t.Errorf("Expected usage string to consider both stdout and stderr")
 	}
 }
@@ -1503,7 +1503,7 @@ func TestTraverseWithParentFlags(t *testing.T) {
 
 	rootCmd.AddCommand(childCmd)
 
-	c, args, err := rootCmd.Traverse([]string{"-b", "--str", "ok", "child", "--int"})
+	c, args, err := rootCmd.traverse([]string{"-b", "--str", "ok", "child", "--int"})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1523,7 +1523,7 @@ func TestTraverseNoParentFlags(t *testing.T) {
 	childCmd.Flags().String("str", "", "")
 	rootCmd.AddCommand(childCmd)
 
-	c, args, err := rootCmd.Traverse([]string{"child"})
+	c, args, err := rootCmd.traverse([]string{"child"})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1544,7 +1544,7 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 
 	expected := "unknown flag: --str"
 
-	c, _, err := rootCmd.Traverse([]string{"--str", "ok", "child"})
+	c, _, err := rootCmd.traverse([]string{"--str", "ok", "child"})
 	if err == nil || !strings.Contains(err.Error(), expected) {
 		t.Errorf("Expected error, %q, got %q", expected, err)
 	}
@@ -1562,7 +1562,7 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 
 	// Expect no error because the last commands args shouldn't be parsed in
 	// Traverse.
-	c, args, err := rootCmd.Traverse([]string{"child", "--str"})
+	c, args, err := rootCmd.traverse([]string{"child", "--str"})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1585,7 +1585,7 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	}
 	subCmd.AddCommand(subsubCmd)
 
-	c, _, err := rootCmd.Traverse([]string{"sub", "subsub"})
+	c, _, err := rootCmd.traverse([]string{"sub", "subsub"})
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
